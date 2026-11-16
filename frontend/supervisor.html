@@ -1,0 +1,1218 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="description"
+    content="Centro de monitoreo y supervisión de ALERTA HUAYCO 2026"
+  >
+
+  <title>Supervisor | ALERTA HUAYCO 2026</title>
+
+  <!-- FUENTES -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- MAPA LEAFLET -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+
+  <style>
+    :root {
+      --navy: #102f50;
+      --navy-dark: #091e35;
+      --blue: #1769b4;
+      --blue-hover: #0d4f90;
+      --bg: #f3f7fc;
+      --white: #ffffff;
+      --text: #172b4d;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --orange: #f59e0b;
+      --green: #10b981;
+      --red: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", Arial, sans-serif;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* PANTALLA DE CARGA */
+
+    #pantallaCarga {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 30px;
+      color: var(--navy);
+      text-align: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    /* PANEL PRINCIPAL */
+
+    #panelSupervisor {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* MENÚ LATERAL */
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      width: 265px;
+      height: 100vh;
+      padding: 25px 17px;
+      background: linear-gradient(
+        180deg,
+        #102f50 0%,
+        #091e35 100%
+      );
+      color: white;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 8px 26px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    .sidebar-logo {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      border-radius: 14px;
+      background: white;
+      font-size: 26px;
+    }
+
+    .sidebar-brand strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .sidebar-brand small {
+      display: block;
+      margin-top: 5px;
+      color: #a9c4df;
+      font-size: 10px;
+      letter-spacing: .4px;
+    }
+
+    .sidebar-label {
+      margin: 28px 12px 12px;
+      color: #90afcc;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .sidebar-nav button {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      padding: 15px 16px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: #c8d9ea;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 650;
+      transition: .2s;
+    }
+
+    .sidebar-nav button:hover {
+      background: rgba(255,255,255,.09);
+      color: white;
+    }
+
+    .sidebar-nav button.activo {
+      background: var(--blue);
+      color: white;
+      box-shadow: 0 8px 18px rgba(0,0,0,.16);
+    }
+
+    .nav-icon {
+      font-size: 19px;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 25px;
+    }
+
+    .sidebar-status {
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 13px;
+      background: rgba(255,255,255,.06);
+      color: #cbdff2;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .sidebar-status strong {
+      display: block;
+      margin-bottom: 5px;
+      color: white;
+    }
+
+    #btnCerrarSesion {
+      width: 100%;
+      margin-top: 15px;
+      padding: 13px;
+      border: 1px solid rgba(248,113,113,.3);
+      border-radius: 11px;
+      background: rgba(220,38,38,.12);
+      color: #fecaca;
+      font-weight: 750;
+      transition: .2s;
+    }
+
+    #btnCerrarSesion:hover {
+      background: #b91c1c;
+      color: white;
+    }
+
+    /* CONTENIDO PRINCIPAL */
+
+    .supervisor-main {
+      flex: 1;
+      min-width: 0;
+      padding: 35px clamp(20px,3vw,48px);
+    }
+
+    .supervisor-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .supervisor-topbar h1 {
+      margin: 0 0 9px;
+      color: var(--navy);
+      font-size: clamp(24px,3vw,32px);
+      font-weight: 850;
+      letter-spacing: -.9px;
+    }
+
+    .supervisor-topbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .supervisor-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: white;
+    }
+
+    .profile-avatar {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #eaf3fe;
+      font-size: 21px;
+    }
+
+    .supervisor-profile strong {
+      display: block;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .supervisor-profile small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* TÍTULOS */
+
+    .section-heading {
+      margin: 0 0 22px;
+    }
+
+    .section-heading h2 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* ESTADÍSTICAS */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      position: relative;
+      padding: 25px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 8px 25px rgba(15,23,42,.04);
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: var(--blue);
+    }
+
+    .stat-card.orange::before {
+      background: var(--orange);
+    }
+
+    .stat-card.green::before {
+      background: var(--green);
+    }
+
+    .stat-icon {
+      display: grid;
+      place-items: center;
+      width: 49px;
+      height: 49px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      background: #eff6ff;
+      font-size: 24px;
+    }
+
+    .stat-card.orange .stat-icon {
+      background: #fff7ed;
+    }
+
+    .stat-card.green .stat-icon {
+      background: #ecfdf5;
+    }
+
+    .stat-card h3 {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat-number {
+      display: block;
+      color: var(--navy);
+      font-size: 38px;
+      font-weight: 900;
+    }
+
+    .stat-caption {
+      display: block;
+      margin-top: 9px;
+      color: #94a3b8;
+      font-size: 11px;
+    }
+
+    /* TARJETA DE BIENVENIDA */
+
+    .welcome-card {
+      padding: 32px;
+      border-radius: 20px;
+      background:
+        radial-gradient(
+          circle at 90% 15%,
+          rgba(56,189,248,.15),
+          transparent 35%
+        ),
+        linear-gradient(135deg,#103a63,#1769b4);
+      color: white;
+    }
+
+    .welcome-card h2 {
+      margin: 0 0 12px;
+      color: white;
+      font-size: 24px;
+    }
+
+    .welcome-card p {
+      max-width: 680px;
+      margin: 0;
+      color: #dbeafe;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    /* ACCIONES */
+
+    .section-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 24px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      padding: 13px 20px;
+      border-radius: 11px;
+      font-weight: 750;
+      transition: .2s;
+    }
+
+    .primary-button {
+      border: none;
+      background: var(--blue);
+      color: white;
+    }
+
+    .primary-button:hover {
+      background: var(--blue-hover);
+    }
+
+    .secondary-button {
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #334155;
+    }
+
+    .secondary-button:hover {
+      background: #f1f5f9;
+    }
+
+    /* FORMULARIOS */
+
+    #formNuevaAlerta,
+    #formNuevoRefugio {
+      padding: 27px;
+      margin-bottom: 25px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 8px 25px rgba(15,23,42,.04);
+    }
+
+    #formNuevaAlerta h3,
+    #formNuevoRefugio h3 {
+      margin: 0 0 20px;
+      color: var(--navy);
+    }
+
+    #formNuevaAlerta label,
+    #formNuevoRefugio label:not(.checkbox-label) {
+      display: block;
+      margin: 14px 0 7px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    #formNuevaAlerta input,
+    #formNuevaAlerta textarea,
+    #formNuevaAlerta select,
+    #formNuevoRefugio input:not([type="checkbox"]) {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1px solid #d6e1ee;
+      border-radius: 11px;
+      background: #f8fafd;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    #formNuevaAlerta textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    #formNuevaAlerta input:focus,
+    #formNuevaAlerta textarea:focus,
+    #formNuevaAlerta select:focus,
+    #formNuevoRefugio input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(23,105,180,.1);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .checkbox-label input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--blue);
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    /* LISTAS Y TARJETAS */
+
+    #listaAlertas,
+    #listaReportes,
+    #listaRefugios {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(280px,1fr));
+      gap: 18px;
+    }
+
+    .tarjeta-alerta,
+    .tarjeta-reporte {
+      min-width: 0;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 8px 24px rgba(15,23,42,.05);
+    }
+
+    .tarjeta-alerta {
+      border-left: 4px solid var(--orange);
+    }
+
+    .tarjeta-reporte {
+      border-left: 4px solid var(--blue);
+    }
+
+    .tarjeta-alerta h3,
+    .tarjeta-reporte h3 {
+      margin: 0 0 15px;
+      color: var(--navy);
+      font-size: 18px;
+    }
+
+    .tarjeta-alerta p,
+    .tarjeta-reporte p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .tarjeta-alerta small,
+    .tarjeta-reporte small {
+      display: block;
+      margin: 15px 0;
+      color: #94a3b8;
+    }
+
+    .tarjeta-alerta select,
+    .tarjeta-reporte select {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: var(--text);
+    }
+
+    .tarjeta-alerta button,
+    .tarjeta-reporte button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--blue);
+      color: white;
+      font-weight: 750;
+    }
+
+    .tarjeta-alerta button:hover,
+    .tarjeta-reporte button:hover {
+      background: var(--blue-hover);
+    }
+
+    /* EVIDENCIAS FOTOGRÁFICAS */
+    .evidence-panel { margin: 18px 0; padding: 15px; border: 1px solid #dbeafe; border-radius: 13px; background: #f8fbff; }
+    .evidence-panel h4 { margin: 0 0 8px; color: var(--navy); font-size: 14px; }
+    .evidence-gallery { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin-top: 12px; }
+    .evidence-gallery a { display: block; overflow: hidden; border-radius: 10px; background: #e2e8f0; }
+    .evidence-gallery img { display: block; width: 100%; height: 100px; object-fit: cover; }
+    .evidence-empty { color: var(--muted); font-size: 12px; }
+
+    /* MAPA CORREGIDO */
+
+    .map-card {
+      margin: 20px 0 30px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 8px 24px rgba(15,23,42,.05);
+    }
+
+    .map-card h3 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 18px;
+    }
+
+    .map-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    #mapaSupervisor {
+      display: block;
+      width: 100%;
+      height: 430px;
+      min-height: 430px;
+      border: 1px solid #dfe7f1;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    #mapaSupervisor .leaflet-pane,
+    #mapaSupervisor .leaflet-control {
+      z-index: auto;
+    }
+
+    /* MENSAJES */
+
+    #mensajeSupervisor:not(:empty) {
+      margin: 25px 0;
+      padding: 16px 20px;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      background: #eff6ff;
+      font-size: 13px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1000px) {
+      .sidebar {
+        width: 215px;
+      }
+
+      .stats-grid {
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #panelSupervisor {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 16px;
+      }
+
+      .sidebar-brand {
+        padding-bottom: 15px;
+      }
+
+      .sidebar-label {
+        margin: 15px 8px 10px;
+      }
+
+      .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 5px;
+      }
+
+      .sidebar-nav button {
+        width: auto;
+        min-width: max-content;
+        padding: 12px;
+      }
+
+      .sidebar-bottom {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .sidebar-status {
+        display: none;
+      }
+
+      .supervisor-main {
+        padding: 24px 16px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #listaAlertas,
+      #listaReportes,
+      #listaRefugios {
+        grid-template-columns: 1fr;
+      }
+
+      #mapaSupervisor {
+        height: 350px;
+        min-height: 350px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PANTALLA DE VERIFICACIÓN -->
+
+  <div id="pantallaCarga">
+    Verificando acceso de supervisor...
+  </div>
+
+  <!-- PANEL SUPERVISOR -->
+
+  <div id="panelSupervisor" hidden>
+
+    <!-- MENÚ LATERAL -->
+
+    <aside class="sidebar">
+
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">🚨</div>
+
+        <div>
+          <strong>ALERTA HUAYCO</strong>
+          <small>CENTRO DE CONTROL 2026</small>
+        </div>
+      </div>
+
+      <div class="sidebar-label">
+        MENÚ PRINCIPAL
+      </div>
+
+      <nav class="sidebar-nav">
+
+        <button
+          type="button"
+          data-seccion="inicio"
+          class="activo"
+        >
+          <span class="nav-icon">📊</span>
+          Inicio
+        </button>
+
+        <button
+          type="button"
+          data-seccion="alertas"
+        >
+          <span class="nav-icon">🚨</span>
+          Alertas
+        </button>
+
+        <button
+          type="button"
+          data-seccion="reportes"
+        >
+          <span class="nav-icon">📋</span>
+          Reportes
+        </button>
+
+        <button
+          type="button"
+          data-seccion="refugios"
+        >
+          <span class="nav-icon">🏠</span>
+          Refugios
+        </button>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="sidebar-status">
+          <strong>🟢 Centro de monitoreo</strong>
+          Gestión de reportes, alertas y refugios.
+        </div>
+
+        <button type="button" id="btnCerrarSesion">
+          🚪 Cerrar sesión
+        </button>
+
+      </div>
+
+    </aside>
+
+    <!-- CONTENIDO -->
+
+    <main class="supervisor-main">
+
+      <header class="supervisor-topbar">
+
+        <div>
+          <h1>Centro de monitoreo</h1>
+          <p>
+            Administración de alertas y reportes ciudadanos.
+          </p>
+        </div>
+
+        <div class="supervisor-profile">
+
+          <div class="profile-avatar">👨‍💼</div>
+
+          <div>
+            <strong id="nombreSupervisor">
+              Supervisor
+            </strong>
+            <small>Administrador de emergencias</small>
+          </div>
+
+        </div>
+
+      </header>
+
+      <!-- SECCIÓN INICIO -->
+
+      <section id="seccion-inicio">
+
+        <div class="section-heading">
+          <h2>Resumen general</h2>
+          <p>
+            Información de los registros almacenados
+            en Supabase.
+          </p>
+        </div>
+
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <div class="stat-icon">🚨</div>
+            <h3>Total de alertas</h3>
+            <strong class="stat-number" id="totalAlertas">
+              0
+            </strong>
+            <span class="stat-caption">
+              Alertas registradas
+            </span>
+          </article>
+
+          <article class="stat-card orange">
+            <div class="stat-icon">📋</div>
+            <h3>Reportes ciudadanos</h3>
+            <strong class="stat-number" id="totalReportes">
+              0
+            </strong>
+            <span class="stat-caption">
+              Reportes recibidos
+            </span>
+          </article>
+
+          <article class="stat-card green">
+            <div class="stat-icon">🏠</div>
+            <h3>Refugios temporales</h3>
+            <strong class="stat-number" id="totalRefugios">
+              0
+            </strong>
+            <span class="stat-caption">
+              Refugios registrados
+            </span>
+          </article>
+
+        </div>
+
+        <div class="welcome-card">
+          <h2>Bienvenido al centro de control</h2>
+          <p>
+            Supervisa los reportes ciudadanos,
+            publica alertas de emergencia,
+            administra los estados de atención
+            y registra refugios temporales.
+          </p>
+        </div>
+
+      </section>
+
+      <!-- SECCIÓN ALERTAS -->
+
+      <section id="seccion-alertas" hidden>
+
+        <div class="section-actions">
+
+          <div class="section-heading">
+            <h2>Gestión de alertas</h2>
+            <p>
+              Publica y administra alertas de riesgo.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            id="btnNuevaAlerta"
+            class="primary-button"
+          >
+            + Nueva alerta
+          </button>
+
+        </div>
+
+        <form id="formNuevaAlerta" hidden>
+
+          <h3>Registrar nueva alerta</h3>
+
+          <label for="alertaTitulo">
+            Título de la alerta
+          </label>
+
+          <input
+            type="text"
+            id="alertaTitulo"
+            placeholder="Ejemplo: Riesgo de deslizamiento"
+            required
+          >
+
+          <label for="alertaDescripcion">
+            Descripción
+          </label>
+
+          <textarea
+            id="alertaDescripcion"
+            placeholder="Describe la situación de riesgo..."
+            required
+          ></textarea>
+
+          <label for="alertaUbicacion">
+            Ubicación
+          </label>
+
+          <input
+            type="text"
+            id="alertaUbicacion"
+            placeholder="Ejemplo: Chosica, carretera Central"
+            required
+          >
+
+          <label for="alertaRiesgo">
+            Nivel de riesgo
+          </label>
+
+          <select id="alertaRiesgo" required>
+            <option value="BAJO">Bajo</option>
+            <option value="MEDIO">Medio</option>
+            <option value="ALTO">Alto</option>
+            <option value="CRITICO">Crítico</option>
+          </select>
+
+          <div class="form-actions">
+
+            <button
+              type="submit"
+              class="primary-button"
+            >
+              Publicar alerta
+            </button>
+
+            <button
+              type="button"
+              id="btnCancelarAlerta"
+              class="secondary-button"
+            >
+              Cancelar
+            </button>
+
+          </div>
+
+        </form>
+
+        <div id="listaAlertas"></div>
+
+      </section>
+
+      <!-- SECCIÓN REPORTES -->
+
+      <section id="seccion-reportes" hidden>
+
+        <div class="section-heading">
+          <h2>Reportes ciudadanos</h2>
+          <p>
+            Revisa los incidentes enviados por
+            los ciudadanos y actualiza su estado.
+          </p>
+        </div>
+
+        <!-- MAPA INTERACTIVO -->
+
+        <div class="map-card">
+
+          <h3>🗺️ Mapa de reportes ciudadanos</h3>
+
+          <p>
+            Los marcadores muestran reportes con
+            coordenadas registradas. Si todavía
+            no hay ubicaciones, el mapa se
+            centra en Chosica, Perú.
+          </p>
+
+          <div
+            id="mapaSupervisor"
+            aria-label="Mapa interactivo de reportes"
+          ></div>
+
+        </div>
+
+        <button type="button" id="btnActualizarReportesSupervisor" class="secondary-button" style="margin-bottom:18px">🔄 Actualizar reportes</button>
+        <div id="listaReportes"></div>
+
+      </section>
+
+      <!-- SECCIÓN REFUGIOS -->
+
+      <section id="seccion-refugios" hidden>
+
+        <div class="section-actions">
+
+          <div class="section-heading">
+            <h2>Refugios temporales</h2>
+            <p>
+              Registra refugios y administra
+              su disponibilidad.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            id="btnNuevoRefugio"
+            class="primary-button"
+          >
+            + Nuevo refugio
+          </button>
+
+        </div>
+
+        <!-- FORMULARIO DE REFUGIOS -->
+
+        <form id="formNuevoRefugio" hidden>
+
+          <h3>Registrar refugio temporal</h3>
+
+          <label for="refNombre">
+            Nombre del refugio
+          </label>
+
+          <input
+            type="text"
+            id="refNombre"
+            placeholder="Ejemplo: Refugio Municipal"
+            required
+          >
+
+          <label for="refDireccion">
+            Dirección
+          </label>
+
+          <input
+            type="text"
+            id="refDireccion"
+            placeholder="Dirección del refugio"
+            required
+          >
+
+          <label for="refCapacidad">
+            Capacidad de personas
+          </label>
+
+          <input
+            type="number"
+            id="refCapacidad"
+            min="1"
+            step="1"
+            placeholder="Ejemplo: 150"
+            required
+          >
+
+          <div class="form-grid">
+
+            <div>
+              <label for="refLatitud">
+                Latitud (opcional)
+              </label>
+
+              <input
+                type="number"
+                id="refLatitud"
+                min="-90"
+                max="90"
+                step="any"
+                placeholder="Ejemplo: -11.94"
+              >
+            </div>
+
+            <div>
+              <label for="refLongitud">
+                Longitud (opcional)
+              </label>
+
+              <input
+                type="number"
+                id="refLongitud"
+                min="-180"
+                max="180"
+                step="any"
+                placeholder="Ejemplo: -76.70"
+              >
+            </div>
+
+          </div>
+
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              id="refDisponible"
+              checked
+            >
+            Refugio disponible
+          </label>
+
+          <div class="form-actions">
+
+            <button
+              type="submit"
+              class="primary-button"
+            >
+              Guardar refugio
+            </button>
+
+            <button
+              type="button"
+              id="btnCancelarRefugio"
+              class="secondary-button"
+            >
+              Cancelar
+            </button>
+
+          </div>
+
+        </form>
+
+        <div id="listaRefugios"></div>
+
+      </section>
+
+      <!-- MENSAJES DEL SISTEMA -->
+
+      <div
+        id="mensajeSupervisor"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+    </main>
+
+  </div>
+
+  <!-- LIBRERÍAS -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- SCRIPT PRINCIPAL -->
+  <script src="supervisor.js"></script>
+
+</body>
+</html>
